@@ -30,7 +30,7 @@ prot_exp <- prot_exp_raw %>%
 
 # visualization of missing values
 vis_miss(prot_exp[,2:20]) # no missing values after aggregation
-vis_miss(prot_exp_raw[,2:20]) # a batch pattern visible here, too
+# vis_miss(prot_exp_raw[,2:20]) # a batch pattern visible here, too
 
 # box plot to explore data distribution
 pr_expr_box_plot(prot_exp)
@@ -80,7 +80,8 @@ RepBinary <- c("Rep1-3", "Rep1-3", "Rep1-3", "Rep1-3", "Rep4-6", "Rep1-3", "Rep1
 tr_prot_exp_cor_annotated <- prot_exp_cor %>% 
   gather(sample_name, values, 2:ncol(prot_exp_cor)) %>%
   spread(Protein, values) %>%
-  add_column(sample_annotation, .after = "sample_name") %>%
+  right_join(sample_annotation, by = "sample_name") %>%
+  select(Sample, sample_name, Pool, Channel, BioRep, Condition, everything()) %>%
   add_column(RepBinary, .after = "BioRep")
 
 
