@@ -15,6 +15,7 @@ library(PMCMRplus) # posthoc test
 
 source('src/helper_functions.R')
 
+########### load data
 # load raw data from excel
 prot_exp_raw <- read_excel("data_052020/Protein_Exp__FeatureLevel_artificial.xlsx", 
                        sheet = "Sheet 1",
@@ -28,14 +29,6 @@ prot_exp <- prot_exp_raw %>%
   summarise_at(vars(Pool1_126:Pool2_131N), sum, na.rm = TRUE) %>%
   ungroup()
 
-# visualization of missing values
-vis_miss(prot_exp[,2:20]) # no missing values after aggregation
-# vis_miss(prot_exp_raw[,2:20]) # a batch pattern visible here, too
-
-# box plot to explore data distribution
-pr_expr_box_plot(prot_exp)
-
-########### prep for PCA
 # read annotation
 sample_annotation <- read_excel("data_052020/ExpDesign.xlsx",
                                 col_names = TRUE)
@@ -43,12 +36,14 @@ sample_annotation <- sample_annotation %>%
   unite(sample_name, Pool, Channel, remove = FALSE)
 
 
-# transpose (Protein is the name of the first column) and add annotation
-# tr_prot_exp_annotated <- prot_exp %>% 
-#   gather(sample_name, values, 2:ncol(prot_exp)) %>%
-#   spread(Protein, values) %>%
-#   add_column(sample_annotation, .after = "sample_name")
+# visualization of missing values
+vis_miss(prot_exp[,2:20]) # no missing values after aggregation
+vis_miss(prot_exp_raw[,2:20]) # a batch pattern visible here, too
 
+# box plot to explore data distribution
+pr_expr_box_plot(prot_exp)
+
+########### prep for PCA
 # transpose (Protein is the name of the first column) and add annotation
 tr_prot_exp_annotated <- prot_exp %>% 
   gather(sample_name, values, 2:ncol(prot_exp)) %>%
@@ -60,7 +55,7 @@ tr_prot_exp_annotated <- prot_exp %>%
 my_scaled_pca <- prcomp(tr_prot_exp_annotated[7:ncol(tr_prot_exp_annotated)], scale. = TRUE)
 autoplot(my_scaled_pca, data=tr_prot_exp_annotated, colour = 'Pool', shape = 'Condition', scale = 0, size = 5)
 
-
+########### 
 # remove batch effect
 prot_exp_matrix <- as.matrix(prot_exp[,2:20])
 prot_exp_matrix_corrected <- removeBatchEffect(prot_exp_matrix, sample_annotation$Pool)
@@ -69,10 +64,10 @@ prot_exp_matrix_corrected <- removeBatchEffect(prot_exp_matrix, sample_annotatio
 prot_exp_cor <- prot_exp
 prot_exp_cor[,2:20] <- prot_exp_matrix_corrected
 
-
 # Control batch effect correction
 pr_expr_box_plot(prot_exp_cor)
 
+########### 
 # add additional vector for replicates 1-3 and 4-6
 RepBinary <- c("Rep1-3", "Rep1-3", "Rep1-3", "Rep1-3", "Rep4-6", "Rep1-3", "Rep1-3", "Rep4-6", "Rep4-6", "Rep4-6", "Rep4-6", "Rep1-3", "Rep1-3", "Rep1-3", "Rep1-3", "Rep4-6", "Rep1-3", "Rep1-3", "Rep4-6")
 
@@ -132,7 +127,7 @@ ggplot(prot_exp_cor, aes(x=Pool1_126, y=Pool2_130N)) +
   scale_x_continuous(trans = 'log10') +
   scale_y_continuous(trans = 'log10')
 
-
+########### 
 ## stats
 prot_exp_cor_gathered <- prot_exp_cor %>%
   gather(sample_name, values, 2:ncol(prot_exp_cor)) %>%
@@ -147,7 +142,9 @@ prot_exp_cor_gathered_VEH_cond1 <- prot_exp_cor_gathered %>%
   mutate_at(vars(CndPrt), as.factor)
 
 kruskal_result_1 <- kruskal.test(values ~ CndPrt, data = prot_exp_cor_gathered_VEH_cond1)
-dunn_result_1 <- kwAllPairsDunnTest(values ~ CndPrt, data = prot_exp_cor_gathered_VEH_cond1, p.adjust.methods = 'BH')
+# not enough memory, this might be the wrong setup anyway
+# dunn_result_1 <- kwAllPairsDunnTest(values ~ CndPrt, data = prot_exp_cor_gathered_VEH_cond1, p.adjust.methods = 'BH')
+glm_result_1 <- glm(values ~ Condition + Protein, data = prot_exp_cor_gathered_VEH_cond1)
 
 # Control vs cond2
 prot_exp_cor_gathered_VEH_cond2 <- prot_exp_cor_gathered %>%
@@ -156,7 +153,8 @@ prot_exp_cor_gathered_VEH_cond2 <- prot_exp_cor_gathered %>%
   mutate_at(vars(CndPrt), as.factor)
 
 kruskal_result_2 <- kruskal.test(values ~ CndPrt, data = prot_exp_cor_gathered_VEH_cond2)
-dunn_result_2 <- kwAllPairsDunnTest(values ~ CndPrt, data = prot_exp_cor_gathered_VEH_cond2, p.adjust.methods = 'BH')
+# not enough memory
+# dunn_result_2 <- kwAllPairsDunnTest(values ~ CndPrt, data = prot_exp_cor_gathered_VEH_cond2, p.adjust.methods = 'BH')
 
 # Control vs cond3
 prot_exp_cor_gathered_VEH_cond3 <- prot_exp_cor_gathered %>%
@@ -165,4 +163,5 @@ prot_exp_cor_gathered_VEH_cond3 <- prot_exp_cor_gathered %>%
   mutate_at(vars(CndPrt), as.factor)
 
 kruskal_result_3 <- kruskal.test(values ~ CndPrt, data = prot_exp_cor_gathered_VEH_cond3)
-dunn_result_3 <- kwAllPairsDunnTest(values ~ CndPrt, data = prot_exp_cor_gathered_VEH_cond3, p.adjust.methods = 'BH')
+# not enough memory
+# dunn_result_3 <- kwAllPairsDunnTest(values ~ CndPrt, data = prot_exp_cor_gathered_VEH_cond3, p.adjust.methods = 'BH')
