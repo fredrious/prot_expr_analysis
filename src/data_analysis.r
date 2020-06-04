@@ -26,7 +26,7 @@ prot_exp_raw <- read_excel("data_052020/Protein_Exp__FeatureLevel_artificial.xls
 prot_exp <- prot_exp_raw %>%
   separate(Feature, c('Protein', 'Peptide', 'Charge'), sep = '_', remove = TRUE) %>%
   group_by(Protein) %>%
-  summarise_at(vars(Pool1_126:Pool2_131N), sum, na.rm = TRUE) %>%
+  summarise_at(vars(Pool1_126:Pool2_131N), sum, na.rm = TRUE) %>% ## Farhad: this will substitude NAs with 0!
   ungroup()
 
 # read annotation
@@ -36,8 +36,8 @@ sample_annotation <- sample_annotation %>%
   unite(sample_name, Pool, Channel, remove = FALSE)
 
 
-# visualization of missing values
-vis_miss(prot_exp[,2:20]) # no missing values after aggregation
+# visualization of missing values  ## Farhad: nicely making use of available tools. "visdat"
+vis_miss(prot_exp[,2:20]) # no missing values after aggregation ## Farhad: because already imputed by 0!
 vis_miss(prot_exp_raw[,2:20]) # a batch pattern visible here, too
 
 # box plot to explore data distribution
@@ -68,7 +68,7 @@ prot_exp_cor[,2:20] <- prot_exp_matrix_corrected
 pr_expr_box_plot(prot_exp_cor)
 
 ########### 
-# add additional vector for replicates 1-3 and 4-6
+# add additional vector for replicates 1-3 and 4-6. ## Farhad: Not sure what is going on here! But seems to be interesting. 
 RepBinary <- c("Rep1-3", "Rep1-3", "Rep1-3", "Rep1-3", "Rep4-6", "Rep1-3", "Rep1-3", "Rep4-6", "Rep4-6", "Rep4-6", "Rep4-6", "Rep1-3", "Rep1-3", "Rep1-3", "Rep1-3", "Rep4-6", "Rep1-3", "Rep1-3", "Rep4-6")
 
 # transpose (Feature is the name of the first column) and add annotation
@@ -106,7 +106,10 @@ ggplot(prot_exp_cor_mnvar, aes(x=median, y= variance)) +
   scale_x_continuous(trans = 'log10') +
   scale_y_continuous(trans = 'log10') +
   geom_smooth(method=lm)
-
+## Farhad: alternatively one can also check sd vs. rank(mean)
+## ggplot(prot_exp_cor_mnvar, aes(x=rank(mean), y= sqrt(variance))) +
+##   geom_point() +
+##   geom_smooth(method="gam")
 
 # heatmap plotting
 prot_exp_matrix_cor_top2perc <- as.matrix(prot_exp_cor_top2perc[2:20])
